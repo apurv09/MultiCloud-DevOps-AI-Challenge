@@ -1,6 +1,6 @@
 ## Key Outcomes
 
-The session provided a comprehensive walkthrough of Git and GitHub concepts within a DevOps context, using a clock-building scenario to simulate real-world team development. Key topics covered included repository creation, committing and pushing code, branching strategies, pull requests, merge conflicts, and advanced Git commands. Participants also explored environment-based branching (dev, QA, production) and received guidance on interview-ready answers for common Git questions.
+The session provided a comprehensive walkthrough of Git and GitHub concepts within a DevOps context, using a clock-building scenario to simulate real-world team development. Key topics covered included repository creation, committing and pushing code, branching strategies, pull requests, merge conflicts, and advanced Git commands. Participants also explored environment-based branching (dev, QA, production) and received guidance on interview-ready answers for common Git  questions.
 
 ---
 
