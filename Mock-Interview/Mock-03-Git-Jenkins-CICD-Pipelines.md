@@ -35,32 +35,107 @@
 ## ❓ 20 Questions — Git, Jenkins & CI/CD Pipelines
 
 ### 🟢 Basic (Q1–Q5)
+🟢 Basic
+
 1. Walk me through your experience with Git branching.
-2. What is Git, Jenkins & CI/CD Pipelines and why does it matter for modern DevOps?
-3. Explain the main components of Git, Jenkins & CI/CD Pipelines in simple terms.
-4. What is the first thing you check if Git, Jenkins & CI/CD Pipelines fails?
-5. How do you stay current on best practices for Git, Jenkins & CI/CD Pipelines?
+At Citi I maintained branching and release workflows across 40+ repositories. The model was simple: main is always releasable, work happens on short-lived feature branches, and merges go through pull requests with reviews. Releases get their own release branch and tag, and urgent fixes go on hotfix branches that merge back to both. I also protected main so nobody could push directly. The main lesson was to keep branches short-lived, because long-lived ones cause painful merge conflicts.
 
-### 🔵 Intermediate (Q6–Q10)
-6. Describe a real project where you implemented Git, Jenkins & CI/CD Pipelines.
-7. How do you handle security and access control in Git, Jenkins & CI/CD Pipelines?
-8. Walk through setting up Git, Jenkins & CI/CD Pipelines from scratch on a new server.
-9. What is your structured approach to troubleshooting Git, Jenkins & CI/CD Pipelines in production?
-10. How does Git, Jenkins & CI/CD Pipelines integrate with the broader CI/CD pipeline?
+2. What are Git, Jenkins and CI/CD pipelines, and why do they matter?
+Git is version control: it tracks every change and lets teams work in parallel. Jenkins is an automation server that reacts to those changes. A CI/CD pipeline is the automated path from commit to production: build, test, package and deploy. Together they replace manual, error-prone releases with fast, repeatable ones. In my experience that moved a release cycle from 2 weeks to 3 days across 25+ applications.
 
-### 🟡 Scenario-Based (Q11–Q15)
-11. **Scenario:** Production down — logs point to Git, Jenkins & CI/CD Pipelines issue. Your action plan?
-12. **Scenario:** Junior engineer misconfigured Git, Jenkins & CI/CD Pipelines. Traffic impacted. What do you do?
-13. **Scenario:** Management wants 30% cost reduction in Git, Jenkins & CI/CD Pipelines infrastructure. Your approach?
-14. **Scenario:** Migrate current Git, Jenkins & CI/CD Pipelines setup to new architecture with zero downtime plan.
-15. **Scenario:** Security vulnerability found in your Git, Jenkins & CI/CD Pipelines pipeline. Remediation steps?
+3. Explain the main components in simple terms.
 
-### 🔴 Senior / Architect Level (Q16–Q20)
-16. Design Git, Jenkins & CI/CD Pipelines for multi-region high availability targeting 99.99% SLA.
-17. What monitoring and alerting strategy do you implement for Git, Jenkins & CI/CD Pipelines?
-18. Describe your disaster recovery experience involving Git, Jenkins & CI/CD Pipelines.
-19. How do you mentor junior engineers on Git, Jenkins & CI/CD Pipelines best practices?
-20. Top 3 mistakes teams make with Git, Jenkins & CI/CD Pipelines and how you prevent each one.
+Git: a repository, commits (snapshots), branches (parallel lines of work) and a remote like GitLab or GitHub.
+Jenkins: a controller that schedules and coordinates, agents that do the work, jobs or pipelines that define the steps, a Jenkinsfile that holds the pipeline as code, plugins, and a credentials store.
+CI/CD pipeline: stages (source, build, test, scan, package, deploy) plus triggers like a webhook on every push.
+
+4. What’s the first thing you check if it fails?
+I read the console output to see which stage failed and what the first real error is. Then I ask what changed: a recent commit, a plugin update, or a credential that expired. If the log doesn’t explain it, I check the environment: disk space on the agent, network access to Git or the registry, and tool versions. Most failures are one of those.
+
+5. How do you stay current?
+I follow Jenkins security advisories and release notes, read the GitLab and Kubernetes docs, and learn by building. For example, I recently containerised a website on NGINX to practise Docker. I also use GitHub Copilot to speed up my IaC work, and I try new things in a sandbox before I use them in a real pipeline.
+
+🔵 Intermediate
+
+6. Describe a real project.
+On the Jio Mart e-commerce platform for Common Grounds Coffee Co., I built Jenkins pipelines for five microservices: Frontend, Product, Order, Payment and Inventory. Each pipeline did build, test, Docker image push to Docker Hub and deploy. That cut release cycle time by 30% and raised pipeline reliability to about 95%. I also documented the workflow and trained the QA team to run the jobs themselves, so routine releases stopped waiting on DevOps.
+
+7. How do you handle security and access control?
+I use least privilege everywhere:
+
+Role-based access in Jenkins, with SSO or LDAP where possible.
+Secrets in the Jenkins credentials store or HashiCorp Vault, never in code or Jenkinsfiles, and masked in logs.
+Protected branches and required reviews in Git.
+Regular patching of Jenkins core and plugins.
+Vulnerability scanning in the pipeline. At Oracle, that kind of scanning plus Vault helped cut critical pre-production findings by 60%.
+
+8. Walk through setting it up from scratch on a new server.
+
+Install a supported JDK and the Jenkins package, and start it as a service.
+Open the port, put NGINX in front with TLS, and unlock Jenkins with the initial admin password.
+Install the plugins I need and create admin accounts with role-based access.
+Add credentials, connect Git, and set up agents.
+Create a multibranch pipeline that reads a Jenkinsfile from the repo, and add a webhook so pushes trigger builds.
+Set up backups of the Jenkins home directory, and manage the config as code where I can.
+
+9. What’s your structured approach to troubleshooting in production?
+First, contain the impact and roll back if there’s a recent change. Then I identify what changed, check logs and metrics (ELK, Prometheus, Grafana), form a hypothesis, test it, and fix it. Afterwards I write a blameless post-mortem and add a check or alert so it can’t fail silently again. At Citi I used Prometheus and Grafana to watch post-release health.
+
+10. How does it integrate with the broader CI/CD pipeline?
+A commit triggers a webhook, and Jenkins runs build and unit tests. A scan step follows, then Docker image build and push to a registry, and a deploy to Kubernetes. Monitoring then feeds back into the next release. Git is the single source of truth, Jenkins is the orchestrator, and Terraform and Ansible handle the infrastructure.
+
+🟡 Scenario-based
+
+11. Production is down and logs point to the pipeline. Your plan?
+
+Stabilise first: if a recent deployment caused it, I roll back to the last good version.
+Communicate: I tell stakeholders what’s happening and when to expect updates.
+Diagnose: I compare the failing release with the last good one, and check config, credentials and dependencies.
+Fix and learn: I apply the fix through the normal pipeline, then run a post-mortem and add a guardrail.
+
+12. A junior engineer misconfigured it and traffic is impacted. What do you do?
+I fix the impact first by reverting to the last known good config, which is easy when config lives in Git. I keep it blameless and focus on how the system allowed the mistake. Then I add guardrails: required reviews on config changes, a staging check, and tighter permissions. I also sit with the engineer to walk through what happened.
+
+13. Management wants a 30% cost cut. Your approach?
+I’d measure first to find where the money goes. Then:
+
+Use ephemeral agents that scale to zero when idle, and spot instances where the builds can tolerate it.
+Cache dependencies and Docker layers to shorten builds.
+Skip unnecessary builds with path filters, and clean up old artifacts and logs.
+Right-size the controller and agents.
+I’d report savings against the baseline so the 30% is provable.
+
+14. Migrate to a new architecture with zero downtime?
+I’d run old and new side by side. Everything moves to code first (Jenkinsfiles and config as code), then I mirror pipelines on the new setup and run both in parallel to compare results. I cut over job by job or team by team, and keep the old system read-only for fast rollback until the new one is proven.
+
+15. A security vulnerability is found in your pipeline. Remediation?
+I assess severity and exposure, then contain it: restrict access and take the affected component offline if needed. I patch Jenkins or the plugin, rotate any credentials that might have been exposed, and check audit logs for misuse. Then I re-run scans, verify the fix, and document it. To prevent a repeat, I add scanning and patch-management checks to the process.
+
+🔴 Senior / Architect
+
+16. Design for multi-region HA targeting 99.99%.
+99.99% means roughly 52 minutes of downtime a year, so there’s no room for single points of failure. Open-source Jenkins isn’t natively active-active, so I’d design around it:
+
+Run the controller on Kubernetes with persistent storage, and keep all config as code so it can be rebuilt quickly in another region.
+Use stateless, autoscaling agents in each region.
+Replicate source and artifacts across regions, with a multi-region registry.
+Deploy applications progressively (canary or blue-green) behind a global load balancer with health checks.
+Build everything with Terraform, and test the failover regularly.
+
+17. What monitoring and alerting do you implement?
+I track queue wait time, build duration, failure rate, agent availability and disk usage in Prometheus and Grafana, with logs in ELK or Datadog. Alerts go out for a controller down, a growing queue, disk above a threshold and a spike in failures. I also watch delivery metrics like deployment frequency and lead time, to show whether the pipeline is actually improving things.
+
+18. Describe your disaster recovery experience.
+My approach is to make the setup rebuildable rather than precious. The controller config is in code, infrastructure is in Terraform and Ansible, and the Jenkins home and secrets are backed up on a schedule to another location. I define recovery time and recovery point targets, and I test restores, because an untested backup isn’t a backup. Adapt this to a real incident of yours if you have one.
+
+19. How do you mentor junior engineers?
+I pair with them on real tasks, explain the why behind each step, and give them safe sandboxes to break things. I write short runbooks and documentation, review their pipelines constructively, and hold blameless post-mortems. At Jio Mart I trained the QA team to run Jenkins jobs themselves, and that’s the kind of independence I aim for.
+
+20. Top 3 mistakes teams make and how I prevent them.
+
+Manual, undocumented setups: the server becomes impossible to rebuild. I fix this with pipelines and config as code, with everything in Git.
+Secrets in code or logs: I use a secrets manager, credential masking and scanning.
+Slow, flaky pipelines and long-lived branches: developers stop trusting them. I keep branches short, parallelise tests, fix flaky tests quickly and treat pipeline speed as a metric.
 
 ---
 
